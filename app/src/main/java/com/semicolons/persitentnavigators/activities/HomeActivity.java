@@ -1,6 +1,8 @@
 package com.semicolons.persitentnavigators.activities;
 
 import android.os.Bundle;
+import android.support.design.widget.CoordinatorLayout;
+import android.support.design.widget.Snackbar;
 import android.support.design.widget.TextInputLayout;
 import android.support.v7.app.AppCompatActivity;
 import android.view.KeyEvent;
@@ -32,6 +34,9 @@ public class HomeActivity extends AppCompatActivity implements View.OnClickListe
     //Marker.
     private ImageView ivLocationMarker;
 
+    //Root view.
+    private CoordinatorLayout rootView;
+
     //Strings.
     private String strFrom;
     private String strTo;
@@ -41,14 +46,27 @@ public class HomeActivity extends AppCompatActivity implements View.OnClickListe
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_home);
 
+        // Initialize views.
         initViews();
-        //moveMarker();
+
+        // Set the listeners.
         setListeners();
     }
 
     @Override
     public void onClick(View v) {
-
+        switch (v.getId()) {
+            case R.id.iv_location_switch:
+                if (Utility.isValidString(strFrom)
+                        && Utility.isValidString(strTo)) {
+                    edFrom.setText(strTo);
+                    edTo.setText(strFrom);
+                } else {
+                    showSnackBar(getString(R.string.snackbar_location_switch_error),
+                            Snackbar.LENGTH_LONG);
+                }
+                break;
+        }
     }
 
     @Override
@@ -61,6 +79,7 @@ public class HomeActivity extends AppCompatActivity implements View.OnClickListe
                     tilFrom.setError(getString(R.string.til_error));
                     edFrom.setText("");
 
+                    // Indicate that the view has consumed the event.
                     return true;
                 } else {
                     if (Utility.isValidString(edFrom.getText().toString())) {
@@ -81,6 +100,8 @@ public class HomeActivity extends AppCompatActivity implements View.OnClickListe
                 } else {
                     if (Utility.isValidString(edTo.getText().toString())) {
                         strTo = edTo.getText().toString();
+
+                        // Start the tracking procedure.
                         startTracking();
                     }
                 }
@@ -96,7 +117,22 @@ public class HomeActivity extends AppCompatActivity implements View.OnClickListe
         model.setStrFrom(strFrom);
 
         // Start the Async thread here.
-        (new LocationUpdaterAsync(this)).execute(model);
+        try {
+            (new LocationUpdaterAsync(this)).execute(model);
+        } catch (Exception e) {
+            // Catching a broad-level exception.
+            showSnackBar(e.getMessage() != null ? e.getMessage()
+                            : getString(R.string.something_went_wrong),
+                    Snackbar.LENGTH_LONG);
+        }
+    }
+
+    private void showSnackBar(String message, int duration) {
+        Snackbar.make(
+                rootView,
+                message,
+                duration
+        ).show();
     }
 
     private void setListeners() {
@@ -113,9 +149,11 @@ public class HomeActivity extends AppCompatActivity implements View.OnClickListe
         edTo = findViewById(R.id.ed_location_to);
         tilTo = findViewById(R.id.til_location_to);
         tilFrom = findViewById(R.id.til_location_from);
+        rootView = findViewById(R.id.root_view);
     }
 
     public void moveMarker() {
+        // Core mechanics - Original contributor: @www.github.com/YMOS/
         int i=50;
 
         while(i<600) {
@@ -137,8 +175,17 @@ public class HomeActivity extends AppCompatActivity implements View.OnClickListe
     public void onLocationUpdated(CoordinateModel model) {
 
         //TODO: Update the UI here.
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
 
-        // Call the marker update method here
-        moveMarker();
+                // Display general alert.
+                showSnackBar(getString(R.string.snackbar_update_location),
+                        Snackbar.LENGTH_SHORT);
+
+                // Call the marker update method here
+                moveMarker();
+            }
+        });
     }
 }
