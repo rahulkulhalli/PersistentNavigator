@@ -31,4 +31,5 @@ dependencies {
     compile "com.android.support:support-core-ui:27.0.2"
     compile "com.android.support:support-core-utils:27.0.2"
     compile "com.android.support:support-compat:27.0.2"
+    compile 'com.android.volley:volley:1.1.0'
 }

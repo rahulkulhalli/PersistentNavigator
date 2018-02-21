@@ -2,13 +2,25 @@ package com.semicolons.persitentnavigators.custom;
 
 import android.os.AsyncTask;
 import android.support.v7.app.AppCompatActivity;
+import android.util.Log;
 
+import com.android.volley.Request;
+import com.android.volley.Response;
+import com.android.volley.VolleyError;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import com.google.gson.JsonObject;
+import com.google.gson.reflect.TypeToken;
 import com.semicolons.persitentnavigators.models.CoordinateModel;
 import com.semicolons.persitentnavigators.models.EndPointsModel;
 
+import java.util.HashMap;
+import java.util.Map;
+
 public class LocationUpdaterAsync extends AsyncTask<EndPointsModel, Void, CoordinateModel> {
+
+    private final String strTAG = getClass().getSimpleName();
+    private CoordinateModel responseModel;
 
     public interface LocationUpdateCallback {
         void onLocationUpdated(CoordinateModel model);
@@ -23,28 +35,66 @@ public class LocationUpdaterAsync extends AsyncTask<EndPointsModel, Void, Coordi
     @Override
     protected CoordinateModel doInBackground(EndPointsModel... endPointsModels) {
 
-        Gson requestGson = new GsonBuilder().serializeNulls().create();
+        final Gson requestGson = new GsonBuilder().serializeNulls().create();
 
         try {
+
+            Response.Listener<JsonObject> responseListener = new Response.Listener<JsonObject>() {
+                @Override
+                public void onResponse(JsonObject response) {
+
+                    //TODO: Check for success/failure
+
+                    // On n/w response:
+                    // Simply convert the response parameters to the Serialized model.
+                    // Supposing response is the following:
+                    // {"x_coordinate": 23.112, "y_coordinate": 11.1141}";
+                    LocationUpdaterAsync.this.responseModel = requestGson
+                            .fromJson(response, CoordinateModel.class);;
+                }
+            };
+
+            Response.ErrorListener errorListener = new Response.ErrorListener() {
+                @Override
+                public void onErrorResponse(VolleyError error) {
+                    if (error != null && error.getMessage() != null) {
+                        Log.e(strTAG, error.getMessage());
+                    } else {
+                        Log.e(strTAG, "Something went wrong");
+                    }
+                }
+            };
 
             String payloadStr = requestGson.toJson(endPointsModels[0],
                     EndPointsModel.class);
 
-            //TODO: Send API request with above payload here.
+            //TODO: Add your URL here.
+            String serverUrl = "<your_url_here>";
 
-            // On n/w response:
-            // Simply convert the response parameters to the Serialized model.
-            // Supposing response is the following:
-            String response = "{\"x_coordinate\": 23.112, \"y_coordinate\": 11.1141}";
-            CoordinateModel updatedLocations = requestGson
-                    .fromJson(response, CoordinateModel.class);
+            //TODO: Send API request with above payload here.
+            GsonRequest<JsonObject> request = new GsonRequest<>(
+                    Request.Method.POST,
+                    serverUrl,
+                    new TypeToken<JsonObject>(){}.getType(),
+                    requestGson,
+                    responseListener,
+                    errorListener
+            );
+
+            Map<String, String> headers = new HashMap<>();
+            //TODO: Add all headers here.
+
+            JsonObject payload = new JsonObject();
+            //TODO: Add the payload here.
+
+            request.setHeaderParams(headers);
+            request.setBodyParams(payload);
 
         } catch (Exception e) {
             e.printStackTrace();
-            //TODO handle exception here.
+            //TODO handle the exception(s) here.
         }
 
-        //TODO: Do a bunch of processing here, probably convert models using Gson.
         return null;
     }
 
@@ -53,6 +103,7 @@ public class LocationUpdaterAsync extends AsyncTask<EndPointsModel, Void, Coordi
         super.onPostExecute(coordinateModel);
 
         // Issuing a call back to the activity.
-        callBack.onLocationUpdated(coordinateModel);
+        //TODO: Caution - might be null. Check appropriately!
+        callBack.onLocationUpdated(responseModel);
     }
 }
