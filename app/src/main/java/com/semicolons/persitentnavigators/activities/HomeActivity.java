@@ -5,6 +5,7 @@ import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
+import android.graphics.Rect;
 import android.graphics.drawable.BitmapDrawable;
 import android.os.Bundle;
 import android.support.design.widget.CoordinatorLayout;
@@ -13,6 +14,7 @@ import android.support.design.widget.TextInputLayout;
 import android.support.v7.app.AppCompatActivity;
 import android.view.KeyEvent;
 import android.view.View;
+import android.view.ViewGroup;
 import android.view.animation.AccelerateDecelerateInterpolator;
 import android.view.inputmethod.EditorInfo;
 import android.widget.EditText;
@@ -25,10 +27,12 @@ import com.semicolons.persitentnavigators.custom.LocationUpdaterAsync;
 import com.semicolons.persitentnavigators.models.CoordinateModel;
 import com.semicolons.persitentnavigators.models.EndPointsModel;
 
+import java.util.Random;
+
 public class HomeActivity extends AppCompatActivity implements View.OnClickListener,
         EditText.OnEditorActionListener, LocationUpdaterAsync.LocationUpdateCallback {
 
-    // Texts.
+    //Input Texts.
     private TextInputLayout tilFrom;
     private TextInputLayout tilTo;
     private EditText edFrom;
@@ -60,6 +64,10 @@ public class HomeActivity extends AppCompatActivity implements View.OnClickListe
     private String strFrom;
     private String strTo;
 
+    //Floor plan's height and width.
+    private int floorPlanHeight;
+    private int floorPlanWidth;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -70,6 +78,17 @@ public class HomeActivity extends AppCompatActivity implements View.OnClickListe
 
         // Set the listeners.
         setListeners();
+    }
+
+    @Override
+    public void onWindowFocusChanged(boolean hasFocus) {
+        super.onWindowFocusChanged(hasFocus);
+
+        // Check if view has been drawn. If yes, get the dimensions.
+        if (ivFloorPlan != null) {
+            floorPlanHeight = ivFloorPlan.getHeight();
+            floorPlanWidth = ivFloorPlan.getWidth();
+        }
     }
 
     @Override
@@ -143,6 +162,57 @@ public class HomeActivity extends AppCompatActivity implements View.OnClickListe
             showSnackBar(e.getMessage() != null ? e.getMessage()
                             : getString(R.string.something_went_wrong),
                     Snackbar.LENGTH_LONG);
+
+            initMarkersToRandomPositions();
+        }
+    }
+
+    private void initMarkersToRandomPositions() {
+
+        ViewGroup container = rootView.findViewById(R.id.cl_home_layout);
+
+        if (srcMarker != null && dstMarker != null) {
+            if (srcMarker.getVisibility() != View.VISIBLE
+                    && dstMarker.getVisibility() != View.VISIBLE) {
+
+                srcMarker.setVisibility(View.VISIBLE);
+                dstMarker.setVisibility(View.VISIBLE);
+
+                Random random = new Random();
+
+                Rect offsetViewBounds = new Rect();
+
+                //returns the visible bounds
+                srcMarker.getDrawingRect(offsetViewBounds);
+
+                // calculates the relative coordinates to the parent
+                container.offsetDescendantRectToMyCoords(srcMarker, offsetViewBounds);
+
+                int relativeTop = offsetViewBounds.top;
+                int relativeLeft = offsetViewBounds.left;
+
+                // Move the markers.
+                srcMarker.animate()
+                        .translationX(relativeTop * random.nextFloat())
+                        .translationY(relativeLeft * random.nextFloat())
+                        .start();
+
+                Rect dstOffsetViewBounds = new Rect();
+
+                //returns the visible bounds
+                dstMarker.getDrawingRect(dstOffsetViewBounds);
+
+                // calculates the relative coordinates to the parent
+                container.offsetDescendantRectToMyCoords(dstMarker, dstOffsetViewBounds);
+
+                int dstRelativeTop = dstOffsetViewBounds.top;
+                int dstRelativeLeft = dstOffsetViewBounds.left;
+
+                dstMarker.animate()
+                        .translationX(dstRelativeTop * random.nextFloat())
+                        .translationY(dstRelativeLeft * random.nextFloat())
+                        .start();
+            }
         }
     }
 
@@ -170,6 +240,8 @@ public class HomeActivity extends AppCompatActivity implements View.OnClickListe
         tilFrom = findViewById(R.id.til_location_from);
         rootView = findViewById(R.id.root_view);
         ivFloorPlan = findViewById(R.id.iv_floor_plan);
+        srcMarker = findViewById(R.id.iv_src_marker);
+        dstMarker = findViewById(R.id.iv_destination_marker);
     }
 
     public void moveMarker() {
@@ -202,6 +274,8 @@ public class HomeActivity extends AppCompatActivity implements View.OnClickListe
                 // Display general alert.
                 showSnackBar(getString(R.string.snackbar_update_location),
                         Snackbar.LENGTH_SHORT);
+
+                initMarkersToRandomPositions();
 
                 // prepare floor map as canvas
                 prepBitmap();
