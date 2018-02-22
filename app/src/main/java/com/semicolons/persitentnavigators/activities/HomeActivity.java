@@ -40,6 +40,12 @@ public class HomeActivity extends AppCompatActivity implements View.OnClickListe
     //Marker.
     private ImageView ivLocationMarker;
 
+    //Source Marker.
+    private ImageView srcMarker;
+
+    //Destination Marker.
+    private ImageView dstMarker;
+
     //Floor plan view
     private  ImageView ivFloorPlan;
 
@@ -141,7 +147,7 @@ public class HomeActivity extends AppCompatActivity implements View.OnClickListe
     }
 
     private void showSnackBar(String message, int duration) {
-        Snackbar.make(
+        Snackbar.make (
                 rootView,
                 message,
                 duration
