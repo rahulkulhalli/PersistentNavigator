@@ -1,5 +1,11 @@
 package com.semicolons.persitentnavigators.activities;
 
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.graphics.Canvas;
+import android.graphics.Color;
+import android.graphics.Paint;
+import android.graphics.drawable.BitmapDrawable;
 import android.os.Bundle;
 import android.support.design.widget.CoordinatorLayout;
 import android.support.design.widget.Snackbar;
@@ -34,8 +40,15 @@ public class HomeActivity extends AppCompatActivity implements View.OnClickListe
     //Marker.
     private ImageView ivLocationMarker;
 
+    //Floor plan view
+    private  ImageView ivFloorPlan;
+
     //Root view.
     private CoordinatorLayout rootView;
+
+    //Bitmaps for canvas processing
+    private Bitmap mutableBitmap;
+    private Bitmap tempBitmap;
 
     //Strings.
     private String strFrom;
@@ -150,6 +163,7 @@ public class HomeActivity extends AppCompatActivity implements View.OnClickListe
         tilTo = findViewById(R.id.til_location_to);
         tilFrom = findViewById(R.id.til_location_from);
         rootView = findViewById(R.id.root_view);
+        ivFloorPlan = findViewById(R.id.iv_floor_plan);
     }
 
     public void moveMarker() {
@@ -183,9 +197,33 @@ public class HomeActivity extends AppCompatActivity implements View.OnClickListe
                 showSnackBar(getString(R.string.snackbar_update_location),
                         Snackbar.LENGTH_SHORT);
 
+                // prepare floor map as canvas
+                prepBitmap();
+
+                // Draw the navigation route
+                drawRoute(50,150, 600, 150);
+
                 // Call the marker update method here
                 moveMarker();
             }
         });
+    }
+
+    private void drawRoute(int startX, int startY, int stopX, int stopY) {
+
+        Canvas canvas = new Canvas(tempBitmap);
+        canvas.drawBitmap(mutableBitmap,0,0,null);
+        Paint paint = new Paint();
+        paint.setColor(Color.BLACK);
+        paint.setStrokeWidth(20);
+        canvas.drawLine(startX, startY, stopX, stopY, paint);
+        //canvas.drawLine(200, 0, 0, 200, paint);
+        ivFloorPlan.setImageDrawable(new BitmapDrawable(getResources(),tempBitmap));
+    }
+
+    private void prepBitmap(){
+        Bitmap bitmap = BitmapFactory.decodeResource(getResources(),R.drawable.floor_plan);
+        mutableBitmap = bitmap.copy(Bitmap.Config.ARGB_8888, true);
+        tempBitmap = Bitmap.createBitmap(mutableBitmap.getWidth(), mutableBitmap.getHeight(), Bitmap.Config.RGB_565);
     }
 }
